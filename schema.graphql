@@ -1,0 +1,39 @@
+type Aggregate_Aggregation {
+  id: ID!
+  tokenAddress: String!
+  outTokenAddress: String!
+  amount: BigInt!
+  destinationAmount: BigInt!
+  feeAmount: BigInt!
+}
+
+type Aggregate_FeeMultiplierUpdated {
+  id: ID!
+  oldFeeMultiplier: BigInt!
+  newFeeMultiplier: BigInt!
+}
+
+type Aggregate_FeeReceiverUpdated {
+  id: ID!
+  oldFeeReceiver: String!
+  newFeeReceiver: String!
+}
+
+type Aggregate_NativeSenderAllowlistUpdated {
+  id: ID!
+  sender: String!
+  allowed: Boolean!
+}
+
+type Aggregate_OwnershipTransferred {
+  id: ID!
+  previousOwner: String!
+  newOwner: String!
+}
+
+type Aggregate_TargetAllowlistUpdated {
+  id: ID!
+  target: String!
+  allowed: Boolean!
+}
+

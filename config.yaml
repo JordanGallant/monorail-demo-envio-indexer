@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: monorail
+networks:
+- id: 10143
+  start_block: 0
+  contracts:
+  - name: Aggregate
+    address:
+    - 0xC995498c22a012353FAE7eCC701810D673E25794
+    handler: src/EventHandlers.ts
+    events:
+    - event: Aggregation(address indexed tokenAddress, address indexed outTokenAddress, uint256 amount, uint256 destinationAmount, uint256 feeAmount)
+    - event: FeeMultiplierUpdated(uint256 oldFeeMultiplier, uint256 newFeeMultiplier)
+    - event: FeeReceiverUpdated(address indexed oldFeeReceiver, address indexed newFeeReceiver)
+    - event: NativeSenderAllowlistUpdated(address indexed sender, bool allowed)
+    - event: OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
+    - event: TargetAllowlistUpdated(address indexed target, bool allowed)
