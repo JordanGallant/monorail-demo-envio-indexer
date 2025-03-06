@@ -11,15 +11,79 @@ import {
   Aggregate_TargetAllowlistUpdated,
 } from "generated";
 
+const createOrUpdateGlobalStats = async (fields: any, context: any) => {
+  let globalStats = await context.GlobalStats.get("global");
+
+  if (!globalStats) {
+    globalStats = {
+      id: "global",
+      feeMultiplier: BigInt(1), // assumed to be 1 if not set, should have an event emitted on initialization
+      feeReceiver: "",
+      owner: "",
+    };
+  }
+
+  // Update only the fields that exist in the event object
+  for (const key in fields) {
+    if (fields[key] !== undefined && key in globalStats) {
+      globalStats[key] = fields[key];
+    }
+  }
+
+  await context.GlobalStats.set(globalStats);
+};
+
 Aggregate.Aggregation.handler(async ({ event, context }) => {
+
+  let {tokenAddress, outTokenAddress, amount, destinationAmount, feeAmount} = event.params;
+
   const entity: Aggregate_Aggregation = {
     id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    tokenAddress: event.params.tokenAddress,
-    outTokenAddress: event.params.outTokenAddress,
-    amount: event.params.amount,
-    destinationAmount: event.params.destinationAmount,
-    feeAmount: event.params.feeAmount,
+    tokenAddress: tokenAddress,
+    outTokenAddress: outTokenAddress,
+    amount: amount,
+    destinationAmount: destinationAmount,
+    feeAmount: feeAmount,
   };
+
+  let tokenIn = await context.Token.get(tokenAddress);
+  if (tokenIn) {
+    tokenIn = {
+      ...tokenIn,
+      tradeInAmount: tokenIn.tradeInAmount + amount,
+      totalAmount: tokenIn.totalAmount + amount,
+      feeAmount: tokenIn.feeAmount + feeAmount,
+    };
+  } else {
+    tokenIn = {
+      id: tokenAddress,
+      tradeInAmount: amount,
+      tradeOutAmount: BigInt(0),
+      feeAmount: feeAmount,
+      totalAmount: amount,
+    };
+  }
+
+  let tokenOut = await context.Token.get(outTokenAddress);
+  if (tokenOut) {
+    tokenOut = {
+      ...tokenOut,
+      tradeOutAmount: tokenOut.tradeOutAmount + destinationAmount,
+      totalAmount: tokenOut.totalAmount + destinationAmount,
+      feeAmount: tokenOut.feeAmount + feeAmount,
+    };
+  } else {
+    tokenOut = {
+      id: outTokenAddress,
+      tradeInAmount: BigInt(0),
+      tradeOutAmount: destinationAmount,
+      feeAmount: feeAmount,
+      totalAmount: destinationAmount,
+    };
+  }
+
+    context.Token.set(tokenIn);
+    context.Token.set(tokenOut);
 
   context.Aggregate_Aggregation.set(entity);
 });
@@ -32,6 +96,8 @@ Aggregate.FeeMultiplierUpdated.handler(async ({ event, context }) => {
   };
 
   context.Aggregate_FeeMultiplierUpdated.set(entity);
+
+  await createOrUpdateGlobalStats({feeMultiplier: event.params.newFeeMultiplier}, context);
 });
 
 Aggregate.FeeReceiverUpdated.handler(async ({ event, context }) => {
@@ -42,6 +108,8 @@ Aggregate.FeeReceiverUpdated.handler(async ({ event, context }) => {
   };
 
   context.Aggregate_FeeReceiverUpdated.set(entity);
+
+  await createOrUpdateGlobalStats({feeReceiver: event.params.newFeeReceiver}, context);
 });
 
 Aggregate.NativeSenderAllowlistUpdated.handler(async ({ event, context }) => {
@@ -62,6 +130,8 @@ Aggregate.OwnershipTransferred.handler(async ({ event, context }) => {
   };
 
   context.Aggregate_OwnershipTransferred.set(entity);
+
+  await createOrUpdateGlobalStats({owner: event.params.newOwner}, context);
 });
 
 Aggregate.TargetAllowlistUpdated.handler(async ({ event, context }) => {

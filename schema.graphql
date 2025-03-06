@@ -1,3 +1,19 @@
+type GlobalStats {
+  id: ID! # singleton - "global"
+  feeMultiplier: BigInt!
+  feeReceiver: String!
+  owner: String!  
+}
+
+type Token {
+  id: ID! # tokenAddress
+  tradeInAmount: BigInt!
+  tradeOutAmount: BigInt!
+  feeAmount: BigInt!
+  totalAmount: BigInt!
+}
+
+
 type Aggregate_Aggregation {
   id: ID!
   tokenAddress: String!
